@@ -6,7 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 public class HashSHA256 {
-    private final static String ALGORITHM_SHA256 = "SHA256";
+    private final static String ALGORITHM_SHA256 = "SHA-256";
     private final static String STANDARD_CHAR_SET = "UTF-8";
 
     private byte[] hash;
@@ -33,6 +33,14 @@ public class HashSHA256 {
         return Arrays.toString(hash);
     }
 
+    public byte[] getHash() {
+        return hash;
+    }
+
+    public int getHashSize() {
+        return hashSize;
+    }
+
     /* Initialize the algorithm SHA256 & the HASH */
     private void initAlgorithm() {
         try {
@@ -40,6 +48,7 @@ public class HashSHA256 {
             hashSize = algorithmSHA256.getDigestLength();
             hash = new byte[hashSize];
         } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
             System.out.println("Not Found. We didn't find algorithm named as " + ALGORITHM_SHA256);
             System.exit(1);
         }

@@ -1,5 +1,6 @@
 package com.isep;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.LinkedList;
@@ -18,12 +19,15 @@ public class LogServer {
     public LogServer(String inputTextFile) {
         Queue<MerkleTree> merkleQueue = new LinkedList<MerkleTree>();
         try {
-            Scanner input = new Scanner(new FileReader(inputTextFile));
+            BufferedReader reader = new BufferedReader(new FileReader(inputTextFile));
+            String line = reader.readLine();
             int rangeInputIndex = 0;
-            while(input.hasNextLine()) {
-                merkleQueue.add(new MerkleTree(input.nextLine(), rangeInputIndex));
+            while (line != null) {
+                merkleQueue.add(new MerkleTree(line, rangeInputIndex));
+                line = reader.readLine();
                 rangeInputIndex++;
             }
+            reader.close();
             buildTree(merkleQueue);
         } catch(FileNotFoundException e) {
             System.out.println("FileNotFoundException. No such file found.");
@@ -33,8 +37,12 @@ public class LogServer {
         }
     }
 
+    public MerkleTree getMerkleTree() {
+        return merkleTree;
+    }
+
     public HashSHA256 currentRootHashSHA256() {
-        return this.merkleTree.hashSHA256;
+        return this.merkleTree.getHashSHA256();
     }
 
     public LinkedList<HashSHA256> genPath(int rangeIndex) {
@@ -46,11 +54,11 @@ public class LogServer {
     }
 
     public void append(String log) {
-        merkleTree = appendSingleByRecursivity(log, merkleTree, merkleTree.size);
+        merkleTree = appendSingleByRecursivity(log, merkleTree, merkleTree.getSize());
     }
 
     public void append(LinkedList<String> list) {
-        merkleTree = appendManyByRecursivity(list, merkleTree, merkleTree.size);
+        merkleTree = appendManyByRecursivity(list, merkleTree, merkleTree.getSize());
     }
 
     /* Build one single MerkleTree with many MerkleTrees */
@@ -64,7 +72,6 @@ public class LogServer {
         merkleQueues[0] = merkleQueueInit;
         merkleQueues[1] = new LinkedList<MerkleTree>();
 
-        /* A REVOIR */
         int a = 0;
         int b = 1;
         while(merkleQueues[a].size() != 1) {
@@ -83,21 +90,21 @@ public class LogServer {
 
     /* Make the audit path with recursivity */
     private LinkedList<HashSHA256> genPathRecursive(int rangeIndex, MerkleTree m, LinkedList<HashSHA256> path) {
-        boolean hasSameIndex = m.startRangeLog == m.endRangeLog && m.endRangeLog == rangeIndex;
+        boolean hasSameIndex = m.getStartRangeLog() == m.getEndRangeLog() && m.getEndRangeLog() == rangeIndex;
         if (hasSameIndex) {
             return path;
         }
 
-        boolean hasTreeLeftSuperiorEnd = m.merkleTreeLeft != null && m.merkleTreeLeft.endRangeLog >= rangeIndex;
+        boolean hasTreeLeftSuperiorEnd = m.getMerkleTreeLeft() != null && m.getMerkleTreeLeft().getEndRangeLog() >= rangeIndex;
         if (hasTreeLeftSuperiorEnd) {
-            path.addFirst(m.merkleTreeRight.hashSHA256);
-            return genPathRecursive(rangeIndex, m.merkleTreeLeft, path);
+            path.addFirst(m.getMerkleTreeRight().getHashSHA256());
+            return genPathRecursive(rangeIndex, m.getMerkleTreeLeft(), path);
         }
 
-        boolean hasTreeRightSuperiorEnd = m.merkleTreeRight != null && m.merkleTreeRight.endRangeLog >= rangeIndex;
+        boolean hasTreeRightSuperiorEnd = m.getMerkleTreeRight() != null && m.getMerkleTreeRight().getEndRangeLog() >= rangeIndex;
         if (hasTreeRightSuperiorEnd) {
-            path.addFirst(Objects.requireNonNull(m.merkleTreeLeft).hashSHA256);
-            return genPathRecursive(rangeIndex, m.merkleTreeRight, path);
+            path.addFirst(Objects.requireNonNull(m.getMerkleTreeLeft()).getHashSHA256());
+            return genPathRecursive(rangeIndex, m.getMerkleTreeRight(), path);
         }
 
         return path;
@@ -105,23 +112,23 @@ public class LogServer {
 
     /* Make the proof with recursivity */
     private LinkedList<HashSHA256> genProofRecursive(int rangeIndex, MerkleTree m, LinkedList<HashSHA256> proof) {
-        if(m.endRangeLog < rangeIndex || m.startRangeLog > rangeIndex) {
+        if(m.getEndRangeLog() < rangeIndex || m.getStartRangeLog() > rangeIndex) {
             return proof;
         }
 
-        if (m.endRangeLog == rangeIndex){
-            proof.addFirst(m.hashSHA256);
+        if (m.getEndRangeLog() == rangeIndex){
+            proof.addFirst(m.getHashSHA256());
             return proof;
         }
 
-        if (m.merkleTreeLeft != null && m.merkleTreeLeft.endRangeLog < rangeIndex) {
-            proof.addFirst(m.merkleTreeLeft.hashSHA256);
-            return genProofRecursive(rangeIndex, m.merkleTreeRight, proof);
+        if (m.getMerkleTreeLeft() != null && m.getMerkleTreeLeft().getEndRangeLog() < rangeIndex) {
+            proof.addFirst(m.getMerkleTreeLeft().getHashSHA256());
+            return genProofRecursive(rangeIndex, m.getMerkleTreeRight(), proof);
         }
 
-        if (m.merkleTreeLeft != null) {
-            proof.addFirst(m.merkleTreeRight.hashSHA256);
-            proof = genProofRecursive(rangeIndex, m.merkleTreeLeft, proof);
+        if (m.getMerkleTreeLeft() != null) {
+            proof.addFirst(m.getMerkleTreeRight().getHashSHA256());
+            proof = genProofRecursive(rangeIndex, m.getMerkleTreeLeft(), proof);
             return proof;
         }
 
@@ -134,13 +141,13 @@ public class LogServer {
             return new MerkleTree(log, 0);
         }
 
-        if(m.size == m.next) {
+        if(m.getSize() == m.getNext()) {
             MerkleTree newElement = new MerkleTree(log, rank);
             return new MerkleTree(m, newElement);
         }
 
-        MerkleTree merkleTreeRightCurrent = appendSingleByRecursivity(log, m.merkleTreeRight, rank);
-        return new MerkleTree(m.merkleTreeLeft, merkleTreeRightCurrent);
+        MerkleTree merkleTreeRightCurrent = appendSingleByRecursivity(log, m.getMerkleTreeRight(), rank);
+        return new MerkleTree(m.getMerkleTreeLeft(), merkleTreeRightCurrent);
     }
 
     /* Append many by recursivity */
@@ -154,7 +161,7 @@ public class LogServer {
             return appendManyByRecursivity(logs, m, rank+1);
         }
 
-        int numberOfReadLog = m.next - m.size;
+        int numberOfReadLog = m.getNext() - m.getSize();
         MerkleTree merkleTreeRes;
         if(numberOfReadLog == 0){
             merkleTreeRes = new MerkleTree(m, new MerkleTree(logs.poll(), rank));
@@ -167,16 +174,16 @@ public class LogServer {
 
             for(int i = 0; i < numberOfReadLog; i++) completeTreeElements.add(elements.poll());
 
-            merkleTreeRes = new MerkleTree(m.merkleTreeLeft, appendManyByRecursivity(completeTreeElements, m.merkleTreeRight, rank));
+            merkleTreeRes = new MerkleTree(m.getMerkleTreeLeft(), appendManyByRecursivity(completeTreeElements, m.getMerkleTreeRight(), rank));
             merkleTreeRes = new MerkleTree(merkleTreeRes, new MerkleTree(elements.poll(), rank + numberOfReadLog));
-            MerkleTree merkleTreeRightCurrent = appendManyByRecursivity(elements, merkleTreeRes.merkleTreeRight, rank + numberOfReadLog + 1);
-            return new MerkleTree(merkleTreeRes.merkleTreeLeft, merkleTreeRightCurrent);
+            MerkleTree merkleTreeRightCurrent = appendManyByRecursivity(elements, merkleTreeRes.getMerkleTreeRight(), rank + numberOfReadLog + 1);
+            return new MerkleTree(merkleTreeRes.getMerkleTreeLeft(), merkleTreeRightCurrent);
         }
 
         if(logs.size() == 1) {
             return appendSingleByRecursivity(logs.poll(), m, rank);
         }
 
-        return new MerkleTree(m.merkleTreeLeft, appendManyByRecursivity(logs, m.merkleTreeLeft, rank));
+        return new MerkleTree(m.getMerkleTreeLeft(), appendManyByRecursivity(logs, m.getMerkleTreeLeft(), rank));
     }
 }

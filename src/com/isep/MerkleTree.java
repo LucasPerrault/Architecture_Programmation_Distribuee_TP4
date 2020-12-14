@@ -2,9 +2,9 @@ package com.isep;
 
 public class MerkleTree {
 
-    HashSHA256 hashSHA256;
-    MerkleTree merkleTreeLeft, merkleTreeRight;
-    int startRangeLog, endRangeLog, size, next;
+    private HashSHA256 hashSHA256;
+    private MerkleTree merkleTreeLeft, merkleTreeRight;
+    private int startRangeLog, endRangeLog, size, next;
 
     public MerkleTree(String leafToString, int index) {
         size = 1;
@@ -17,7 +17,7 @@ public class MerkleTree {
     public MerkleTree(MerkleTree left, MerkleTree right) {
         if (left.endRangeLog != right.startRangeLog - 1) {
             System.out.println("Conflict error. Merkle Trees are not contiguous.");
-            System.out.println("MerkleTree Right start at" + (right.startRangeLog - 1)
+            System.out.println("MerkleTree Right start at " + (right.startRangeLog - 1)
                     + "& MerkleTree Left end at " + left.endRangeLog);
             System.exit(1);
             return;
@@ -43,4 +43,36 @@ public class MerkleTree {
         }
     }
 
+    public int getEndRangeLog() {
+        return endRangeLog;
+    }
+
+    public int getStartRangeLog() {
+        return startRangeLog;
+    }
+
+    public HashSHA256 getHashSHA256() {
+        return hashSHA256;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public MerkleTree getMerkleTreeLeft() {
+        return merkleTreeLeft;
+    }
+
+    public MerkleTree getMerkleTreeRight() {
+        return merkleTreeRight;
+    }
+
+    public int getNext() {
+        return next;
+    }
+
+    @Override
+    public String toString() {
+        return "hash: " + getHashSHA256();
+    }
 }
