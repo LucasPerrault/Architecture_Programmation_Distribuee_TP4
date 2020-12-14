@@ -19,7 +19,6 @@ public class MerkleTree {
             System.out.println("Conflict error. Merkle Trees are not contiguous.");
             System.out.println("MerkleTree Right start at " + (right.startRangeLog - 1)
                     + "& MerkleTree Left end at " + left.endRangeLog);
-            System.exit(1);
             return;
         }
 

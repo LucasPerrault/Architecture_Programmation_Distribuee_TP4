@@ -35,9 +35,9 @@ public class TestMerkleTree {
     @Test
     public void MerkleTreeComplexeParamsConflict() {
         MerkleTree mLeft = new MerkleTree("TE", 0);
-        MerkleTree mRight = new MerkleTree("ST", 2);
+        MerkleTree mRight = new MerkleTree("ST", 3);
 
         MerkleTree m = new MerkleTree(mLeft, mRight);
-        assertNull(m);
+        assertNull(m.getHashSHA256());
     }
 }
